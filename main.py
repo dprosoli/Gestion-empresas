@@ -79,7 +79,7 @@ def listar_usuarios():
 @app.post("/clientes/", response_model=Cliente)
 def crear_cliente(cliente: ClienteCreate):
     cliente_id = uuid4()
-    nuevo_cliente = Cliente(id=cliente_id, **cliente.dict())
+    nuevo_cliente = Cliente(id=cliente_id, **cliente.model_dump())  # Cambiado de .dict() a .model_dump() para Pydantic v2
     db_clientes[cliente_id] = nuevo_cliente
     return nuevo_cliente
 
@@ -91,7 +91,7 @@ def listar_clientes():
 @app.post("/facturas/", response_model=Factura)
 def crear_factura(factura: FacturaCreate):
     factura_id = uuid4()
-    nueva_factura = Factura(id=factura_id, estado="pendiente", **factura.dict())
+    nueva_factura = Factura(id=factura_id, estado="pendiente", **factura.model_dump())  # Cambiado de .dict() a .model_dump() para Pydantic v2
     db_facturas[factura_id] = nueva_factura
     return nueva_factura
 
@@ -103,4 +103,4 @@ def listar_facturas():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))  # lee el puerto de Render o usa 8000 local
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)  # Cambiado "main:app" por app
