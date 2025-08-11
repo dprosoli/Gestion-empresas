@@ -3,8 +3,9 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from uuid import UUID, uuid4
 import os
+import uvicorn
 
-app = FastAPI(title="Gestión Pymes Servicios - Backend")
+app = FastAPI(title="Gestión Empresas Servicios - Backend")
 
 # Simulación base de datos en memoria
 db_usuarios = {}
@@ -100,6 +101,5 @@ def listar_facturas():
     return list(db_facturas.values())
 
 if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))  # Usa el puerto de Render o 8000 por defecto
+    port = int(os.environ.get("PORT", 8000))  # Toma el puerto de Render o 8000 por defecto
     uvicorn.run(app, host="0.0.0.0", port=port)
