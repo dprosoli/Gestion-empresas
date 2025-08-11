@@ -1,56 +1,106 @@
-from fastapi import FastAPI
-from typing import List
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, EmailStr
+from typing import List, Optional
+from uuid import UUID, uuid4
+import os
 
-app = FastAPI(title="Gestión de Empresas")
+app = FastAPI(title="Gestión Pymes Servicios - Backend")
 
-# Modelos
+# Simulación base de datos en memoria (para mostrar estructura)
+db_usuarios = {}
+db_clientes = {}
+db_facturas = {}
+
+# Modelos Pydantic
 class Usuario(BaseModel):
-    id: int
+    id: UUID
+    email: EmailStr
     nombre: str
-    email: str
+    rol: str  # admin / usuario
+    hashed_password: str
+
+class UsuarioCreate(BaseModel):
+    email: EmailStr
+    nombre: str
+    password: str
+    rol: Optional[str] = "usuario"
 
 class Cliente(BaseModel):
-    id: int
+    id: UUID
     nombre: str
-    direccion: str
+    dni_cuit: Optional[str]
+    telefono: Optional[str]
+    email: Optional[EmailStr]
+    direccion: Optional[str]
+    condiciones_pago: Optional[str]
+
+class ClienteCreate(BaseModel):
+    nombre: str
+    dni_cuit: Optional[str]
+    telefono: Optional[str]
+    email: Optional[EmailStr]
+    direccion: Optional[str]
+    condiciones_pago: Optional[str]
 
 class Factura(BaseModel):
-    id: int
-    cliente_id: int
+    id: UUID
+    cliente_id: UUID
+    tipo: str  # A, B, C
     monto: float
+    estado: str  # pendiente, pagada, vencida
+    fecha: str
 
-# Datos en memoria
-usuarios_db: List[Usuario] = []
-clientes_db: List[Cliente] = []
-facturas_db: List[Factura] = []
+class FacturaCreate(BaseModel):
+    cliente_id: UUID
+    tipo: str
+    monto: float
+    fecha: str
 
-# Rutas para usuarios
-@app.post("/usuarios")
-def crear_usuario(usuario: Usuario):
-    usuarios_db.append(usuario)
-    return usuario
+# Endpoints usuarios
+@app.post("/usuarios/", response_model=Usuario)
+def crear_usuario(user: UsuarioCreate):
+    if user.email in db_usuarios:
+        raise HTTPException(status_code=400, detail="Usuario ya existe")
+    nuevo_usuario = Usuario(
+        id=uuid4(),
+        email=user.email,
+        nombre=user.nombre,
+        rol=user.rol,
+        hashed_password=user.password + "_hashed"
+    )
+    db_usuarios[user.email] = nuevo_usuario
+    return nuevo_usuario
 
-@app.get("/usuarios", response_model=List[Usuario])
+@app.get("/usuarios/", response_model=List[Usuario])
 def listar_usuarios():
-    return usuarios_db
+    return list(db_usuarios.values())
 
-# Rutas para clientes
-@app.post("/clientes")
-def crear_cliente(cliente: Cliente):
-    clientes_db.append(cliente)
-    return cliente
+# Endpoints clientes
+@app.post("/clientes/", response_model=Cliente)
+def crear_cliente(cliente: ClienteCreate):
+    cliente_id = uuid4()
+    nuevo_cliente = Cliente(id=cliente_id, **cliente.dict())
+    db_clientes[cliente_id] = nuevo_cliente
+    return nuevo_cliente
 
-@app.get("/clientes", response_model=List[Cliente])
+@app.get("/clientes/", response_model=List[Cliente])
 def listar_clientes():
-    return clientes_db
+    return list(db_clientes.values())
 
-# Rutas para facturas
-@app.post("/facturas")
-def crear_factura(factura: Factura):
-    facturas_db.append(factura)
-    return factura
+# Endpoints facturas
+@app.post("/facturas/", response_model=Factura)
+def crear_factura(factura: FacturaCreate):
+    factura_id = uuid4()
+    nueva_factura = Factura(id=factura_id, estado="pendiente", **factura.dict())
+    db_facturas[factura_id] = nueva_factura
+    return nueva_factura
 
-@app.get("/facturas", response_model=List[Factura])
+@app.get("/facturas/", response_model=List[Factura])
 def listar_facturas():
-    return facturas_db
+    return list(db_facturas.values())
+
+# Para ejecutarlo sin errores de puerto
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))  # lee el puerto de Render o usa 8000 local
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
