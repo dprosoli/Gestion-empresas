@@ -6,7 +6,7 @@ import os
 
 app = FastAPI(title="Gestión Pymes Servicios - Backend")
 
-# Simulación base de datos en memoria (para mostrar estructura)
+# Simulación base de datos en memoria
 db_usuarios = {}
 db_clientes = {}
 db_facturas = {}
@@ -16,7 +16,7 @@ class Usuario(BaseModel):
     id: UUID
     email: EmailStr
     nombre: str
-    rol: str  # admin / usuario
+    rol: str
     hashed_password: str
 
 class UsuarioCreate(BaseModel):
@@ -45,9 +45,9 @@ class ClienteCreate(BaseModel):
 class Factura(BaseModel):
     id: UUID
     cliente_id: UUID
-    tipo: str  # A, B, C
+    tipo: str
     monto: float
-    estado: str  # pendiente, pagada, vencida
+    estado: str
     fecha: str
 
 class FacturaCreate(BaseModel):
@@ -79,7 +79,7 @@ def listar_usuarios():
 @app.post("/clientes/", response_model=Cliente)
 def crear_cliente(cliente: ClienteCreate):
     cliente_id = uuid4()
-    nuevo_cliente = Cliente(id=cliente_id, **cliente.model_dump())  # Cambiado de .dict() a .model_dump() para Pydantic v2
+    nuevo_cliente = Cliente(id=cliente_id, **cliente.model_dump())
     db_clientes[cliente_id] = nuevo_cliente
     return nuevo_cliente
 
@@ -91,7 +91,7 @@ def listar_clientes():
 @app.post("/facturas/", response_model=Factura)
 def crear_factura(factura: FacturaCreate):
     factura_id = uuid4()
-    nueva_factura = Factura(id=factura_id, estado="pendiente", **factura.model_dump())  # Cambiado de .dict() a .model_dump() para Pydantic v2
+    nueva_factura = Factura(id=factura_id, estado="pendiente", **factura.model_dump())
     db_facturas[factura_id] = nueva_factura
     return nueva_factura
 
@@ -99,8 +99,7 @@ def crear_factura(factura: FacturaCreate):
 def listar_facturas():
     return list(db_facturas.values())
 
-# Para ejecutarlo sin errores de puerto
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8000))  # lee el puerto de Render o usa 8000 local
-    uvicorn.run(app, host="0.0.0.0", port=port)  # Cambiado "main:app" por app
+    port = int(os.environ.get("PORT", 8000))  # Usa el puerto de Render o 8000 por defecto
+    uvicorn.run(app, host="0.0.0.0", port=port)
