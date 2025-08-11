@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: gestion-pymes
+    name: gestion-empresas
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
